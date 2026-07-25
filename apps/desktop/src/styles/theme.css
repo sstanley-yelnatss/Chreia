@@ -80,6 +80,34 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
   }
+
+  /* Thin scrollbars — dark chrome, cyan hover (not OS default). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.35);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 .font-mono-ui {

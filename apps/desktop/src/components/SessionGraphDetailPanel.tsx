@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { fetchSessionLogSlice } from "../api";
-import type { CaptureLogMessage, SessionGraphLane, SessionGraphRow } from "../types";
+import type {
+  BlockEntry,
+  CaptureLogMessage,
+  SessionGraphLane,
+  SessionGraphRow,
+} from "../types";
 
 function formatTime(at: string): string {
   const d = new Date(at);
@@ -47,6 +52,7 @@ interface Props {
   workspaceId: string;
   row: SessionGraphRow;
   lane?: SessionGraphLane;
+  blocks?: BlockEntry[];
   onClose: () => void;
   onOpenBlock?: (blockId: string) => void;
 }
@@ -55,27 +61,42 @@ export default function SessionGraphDetailPanel({
   workspaceId,
   row,
   lane,
+  blocks = [],
   onClose,
   onOpenBlock,
 }: Props) {
   const [messages, setMessages] = useState<CaptureLogMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedSliceKey = useRef<string | null>(null);
 
   const showMessages =
     row.kind === "message_range" ||
     row.kind === "checkpoint" ||
     (row.message_count > 0 && row.log_from_seq <= row.log_to_seq);
 
+  const sliceKey = `${workspaceId}:${row.lane}:${row.log_from_seq}:${row.log_to_seq}`;
+
   useEffect(() => {
     if (!showMessages || row.log_from_seq > row.log_to_seq) {
       setMessages([]);
+      setLoading(false);
+      setError(null);
+      loadedSliceKey.current = null;
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    const prevKey = loadedSliceKey.current;
+    const isIdentical = prevKey === sliceKey;
+    const sameOpenRange =
+      Boolean(prevKey) &&
+      prevKey!.startsWith(`${workspaceId}:${row.lane}:${row.log_from_seq}:`);
+    // Open ranges grow as new msgs arrive — soft-refresh without clearing / spinner.
+    if (!isIdentical && !sameOpenRange) {
+      setLoading(true);
+      setError(null);
+    }
 
     fetchSessionLogSlice({
       workspaceId,
@@ -84,7 +105,10 @@ export default function SessionGraphDetailPanel({
       branch: row.lane === "main" ? null : row.lane,
     })
       .then((msgs) => {
-        if (!cancelled) setMessages(msgs);
+        if (!cancelled) {
+          loadedSliceKey.current = sliceKey;
+          setMessages(msgs);
+        }
       })
       .catch((e) => {
         if (!cancelled) setError(String(e));
@@ -96,7 +120,29 @@ export default function SessionGraphDetailPanel({
     return () => {
       cancelled = true;
     };
-  }, [workspaceId, row, showMessages]);
+  }, [
+    workspaceId,
+    row.lane,
+    row.log_from_seq,
+    row.log_to_seq,
+    showMessages,
+    sliceKey,
+  ]);
+
+  const blockTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of blocks) {
+      map.set(b.id, b.title?.trim() || `Block ${b.id.slice(0, 8)}`);
+    }
+    return map;
+  }, [blocks]);
+
+  const linkedBlockIds = row.linked_block_ids ?? [];
+  const showAttachedBlocks =
+    linkedBlockIds.length > 0 ||
+    row.kind === "checkpoint" ||
+    row.kind === "message_range" ||
+    showMessages;
 
   return (
     <aside className="flex max-h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border bg-card/50">
@@ -191,30 +237,47 @@ export default function SessionGraphDetailPanel({
           </div>
         </dl>
 
-        {(row.linked_block_ids?.length ?? 0) > 0 && (
+        {showAttachedBlocks && (
           <div className="mt-4 border-t border-border pt-3">
             <p className="font-mono-ui text-[10px] uppercase tracking-wide text-muted-foreground">
-              Linked blocks
+              Attached blocks
             </p>
-            <ul className="mt-2 space-y-1">
-              {row.linked_block_ids!.map((id) => (
-                <li key={id}>
-                  {onOpenBlock ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenBlock(id)}
-                      className="font-mono-ui text-xs text-accent hover:underline"
-                    >
-                      {id.slice(0, 8)}…
-                    </button>
-                  ) : (
-                    <span className="font-mono-ui text-xs text-muted-foreground">
-                      {id.slice(0, 8)}…
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {linkedBlockIds.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {row.kind === "checkpoint"
+                  ? "No blocks linked on this checkpoint."
+                  : "No blocks linked to this message range yet."}
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-1.5">
+                {linkedBlockIds.map((id) => {
+                  const title = blockTitleById.get(id) ?? `Block ${id.slice(0, 8)}…`;
+                  return (
+                    <li key={id}>
+                      {onOpenBlock ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenBlock(id)}
+                          className="text-left text-xs text-accent hover:underline"
+                        >
+                          <span className="font-medium text-foreground">{title}</span>
+                          <span className="font-mono-ui ml-1.5 text-[10px] text-muted-foreground">
+                            {id.slice(0, 8)}…
+                          </span>
+                        </button>
+                      ) : (
+                        <span className="text-xs text-foreground">
+                          {title}
+                          <span className="font-mono-ui ml-1.5 text-[10px] text-muted-foreground">
+                            {id.slice(0, 8)}…
+                          </span>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         )}
 

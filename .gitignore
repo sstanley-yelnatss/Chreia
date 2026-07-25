@@ -75,6 +75,7 @@ examples/
 fixtures/dogfood-checklist.md
 apps/desktop/README.md
 docs/engineering/MAC-BUILD-PLAN.md
+docs/engineering/MULTIPLAYER-LADDER.md
 
 # --- Marketing site (separate repo: contextlayer-site) ---
 website/
