@@ -147,4 +147,14 @@ label:has(input[type="radio"]) {
     background: rgba(248, 113, 113, 0.08);
     color: var(--belief-rejected);
   }
+
+  /** Put the vertical scrollbar on the left (session graph, etc.). */
+  .cl-scroll-y-left {
+    direction: rtl;
+  }
+
+  .cl-scroll-y-left > .cl-scroll-y-left-inner {
+    direction: ltr;
+    min-height: min-content;
+  }
 }

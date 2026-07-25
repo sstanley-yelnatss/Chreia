@@ -257,16 +257,23 @@ fn latest_log_seq(workspace_id: &str, capture_branch: &str) -> Result<u64, Strin
 
 pub fn session_message_count(session: &CaptureSession) -> Result<u32, String> {
     let capture = CaptureStore::default_open()?;
-    let branch = if session.capture_branch == "main" {
-        None
-    } else {
-        Some(session.capture_branch.as_str())
-    };
-    let messages = capture.read_log_messages_on_line(&session.workspace_id, branch)?;
-    Ok(messages
+    // Main-line messages after capture start (branch logs use their own seq space).
+    let main_messages = capture.read_log_messages_on_line(&session.workspace_id, None)?;
+    let mut count = main_messages
         .iter()
         .filter(|m| m.seq > session.log_seq_at_start)
-        .count() as u32)
+        .count() as u32;
+
+    // Branch line only holds post-fork traffic — count all of it while on a branch.
+    if session.capture_branch != "main" {
+        let branch_messages = capture.read_log_messages_on_line(
+            &session.workspace_id,
+            Some(session.capture_branch.as_str()),
+        )?;
+        count += branch_messages.len() as u32;
+    }
+
+    Ok(count)
 }
 
 /// Start an opt-in capture session. Replaces any existing session for the same workspace.

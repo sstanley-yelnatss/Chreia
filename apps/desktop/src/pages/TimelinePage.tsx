@@ -118,19 +118,64 @@ export default function TimelinePage() {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [selectedSessionRow, setSelectedSessionRow] = useState<SessionGraphRow | null>(null);
 
-  const loadSessionGraph = useCallback(async () => {
+  const loadSessionGraph = useCallback(async (options?: { silent?: boolean }) => {
     if (!workspaceId) return;
-    setSessionLoading(true);
+    const silent = options?.silent ?? false;
+    if (!silent) setSessionLoading(true);
     try {
       const graph = await fetchSessionGraph(workspaceId);
-      setSessionGraph(graph);
-      setSelectedSessionRow((prev) =>
-        prev ? (graph.rows.find((r) => r.id === prev.id) ?? null) : null,
-      );
+      setSessionGraph((prev) => {
+        if (
+          prev &&
+          prev.rows.length === graph.rows.length &&
+          prev.capture_active === graph.capture_active &&
+          prev.lanes.length === graph.lanes.length &&
+          prev.rows.every((r, i) => {
+            const n = graph.rows[i];
+            return (
+              r.id === n.id &&
+              r.message_count === n.message_count &&
+              r.log_from_seq === n.log_from_seq &&
+              r.log_to_seq === n.log_to_seq &&
+              r.primary_label === n.primary_label &&
+              r.is_active_head === n.is_active_head &&
+              (r.linked_block_ids?.join(",") ?? "") ===
+                (n.linked_block_ids?.join(",") ?? "")
+            );
+          }) &&
+          prev.lanes.every((l, i) => {
+            const n = graph.lanes[i];
+            return l.id === n.id && l.status === n.status && l.label === n.label;
+          })
+        ) {
+          return prev;
+        }
+        return graph;
+      });
+      setSelectedSessionRow((prev) => {
+        if (!prev) return null;
+        const next = graph.rows.find((r) => r.id === prev.id) ?? null;
+        if (!next) return null;
+        if (
+          prev.message_count === next.message_count &&
+          prev.log_from_seq === next.log_from_seq &&
+          prev.log_to_seq === next.log_to_seq &&
+          prev.primary_label === next.primary_label &&
+          prev.secondary_label === next.secondary_label &&
+          prev.is_active_head === next.is_active_head &&
+          (prev.linked_block_ids?.join(",") ?? "") ===
+            (next.linked_block_ids?.join(",") ?? "") &&
+          prev.note === next.note &&
+          prev.intent === next.intent
+        ) {
+          return prev;
+        }
+        return next;
+      });
     } catch (e) {
-      showToast({ message: String(e), kind: "error" });
+      if (!silent) showToast({ message: String(e), kind: "error" });
     } finally {
-      setSessionLoading(false);
+      if (!silent) setSessionLoading(false);
     }
   }, [workspaceId, showToast]);
 
@@ -190,7 +235,7 @@ export default function TimelinePage() {
           kind: "error",
         });
       }
-    }, 30_000);
+    }, 120_000);
     return () => window.clearTimeout(timer);
   }, [captureActive, captureMessageCount, showToast]);
 
@@ -203,11 +248,16 @@ export default function TimelinePage() {
     }
   }, [captureLogBoundaryAvailable, traceLogSliceInPr]);
 
-  // MCP and other writers update the same DB — refresh while viewing timeline.
+  // MCP and other writers update the same DB — refresh timeline + session graph while viewing.
   useEffect(() => {
     if (!workspaceId) return;
 
-    const refresh = () => load({ silent: true });
+    const refresh = () => {
+      void load({ silent: true });
+      if (workspaceView === "session") {
+        void loadSessionGraph({ silent: true });
+      }
+    };
 
     const onFocus = () => refresh();
     const onVisibility = () => {
@@ -223,7 +273,7 @@ export default function TimelinePage() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.clearInterval(interval);
     };
-  }, [workspaceId, load]);
+  }, [workspaceId, workspaceView, load, loadSessionGraph]);
 
   // Keep open block panel in sync when MCP edits the same block.
   useEffect(() => {
@@ -380,9 +430,17 @@ export default function TimelinePage() {
         intent: values.intent,
         note: values.note,
         rejectedPaths: values.rejectedPaths,
-        blockIds: prExportMode ? [...selectedForPr] : [],
+        blockIds: prExportMode
+          ? [...selectedForPr]
+          : selected
+            ? [selected.id]
+            : [],
       });
-      showToast("Trace checkpoint committed");
+      showToast(
+        selected && !prExportMode
+          ? `Trace checkpoint committed · linked ${selected.title || "block"}`
+          : "Trace checkpoint committed",
+      );
       if (workspaceView === "session") void loadSessionGraph();
     } catch (e) {
       showToast({ message: String(e), kind: "error" });
@@ -864,6 +922,7 @@ export default function TimelinePage() {
         workspaceId={workspaceId}
         row={selectedSessionRow}
         lane={sessionGraph?.lanes.find((l) => l.id === selectedSessionRow.lane)}
+        blocks={allBlocks}
         onClose={() => setSelectedSessionRow(null)}
         onOpenBlock={openBlockById}
       />

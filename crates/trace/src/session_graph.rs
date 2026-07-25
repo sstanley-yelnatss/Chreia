@@ -491,7 +491,8 @@ pub fn build_session_graph(capture: &CaptureStore, workspace_id: &str) -> Result
                                 if let Some(at) = last_message_at(&messages, from, to) {
                                     let preview = first_user_preview(&messages, from, to);
                                     rows.push(SessionGraphRow {
-                                        id: format!("range-{lane_id}-{from}-{to}-open"),
+                                        // Stable id (omit `to`) so live capture polls don't remount the detail panel.
+                                        id: format!("range-{lane_id}-{from}-open"),
                                         kind: "message_range".to_string(),
                                         lane: lane_id.clone(),
                                         at,
