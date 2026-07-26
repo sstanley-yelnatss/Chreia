@@ -76,7 +76,8 @@ fixtures/dogfood-checklist.md
 apps/desktop/README.md
 docs/engineering/MAC-BUILD-PLAN.md
 docs/engineering/MULTIPLAYER-LADDER.md
-
+docs/engineering/CAPTURE-REDACTION-TOGGLE.md
+docs/engineering/REPO-HYGIENE-RED-FLAGS.md
 # --- Marketing site (separate repo: contextlayer-site) ---
 website/
 
