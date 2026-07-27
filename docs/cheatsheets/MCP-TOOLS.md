@@ -1,4 +1,4 @@
-# ContextLayer MCP — Tool Reference
+# Chreia MCP — Tool Reference
 
 Quick sheet for all tools exposed by `contextlayer-mcp`. Same database as the desktop app: `~/.contextlayer/graph.db`.
 

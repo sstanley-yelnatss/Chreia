@@ -1,4 +1,4 @@
-//! ContextLayer minimal MCP — stdio read/write lane to ~/.contextlayer/graph.db
+//! Chreia minimal MCP — stdio read/write lane to ~/.contextlayer/graph.db
 //! No text normalization; records user/agent wording as provided.
 
 use std::path::PathBuf;
@@ -317,7 +317,7 @@ struct StopCaptureArgs {
 #[tool_router]
 impl ContextLayerMcp {
     #[tool(
-        description = "List all ContextLayer workspaces (id, name, goal, template). Call before logging if workspace is unknown."
+        description = "List all Chreia workspaces (id, name, goal, template). Call before logging if workspace is unknown."
     )]
     fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
         let list = self.with_store(|store| store.list_workspaces(false))?;
@@ -521,7 +521,7 @@ impl ContextLayerMcp {
     }
 
     #[tool(
-        description = "Map a Cursor project folder to a ContextLayer workspace (does not start recording — use start_capture)."
+        description = "Map a Cursor project folder to a Chreia workspace (does not start recording — use start_capture)."
     )]
     fn bind_capture_project(
         &self,
@@ -933,7 +933,7 @@ impl ServerHandler for ContextLayerMcp {
                 .build(),
         )
         .with_instructions(
-            "ContextLayer reasoning graph MCP. Same database as the desktop app (~/.contextlayer/graph.db). \
+            "Chreia reasoning graph MCP. Same database as the desktop app (~/.contextlayer/graph.db). \
              Record the user's exact wording in text fields — do not rewrite or normalize. \
              Only write when the user asks you to log something. \
              Before suggesting tests, call get_workspace_index (tier 1) then get_block for details — avoid loading full workspace text. get_workspace_hygiene for open loops and dead ends. \

@@ -33,7 +33,7 @@ fn default_markers() -> Vec<String> {
         "Hypothesis:".into(),
         "Reasoning appendix by".into(),
         // Legacy footer text from exports before the site-link footer.
-        "Exported from ContextLayer".into(),
+        "Exported from Chreia".into(),
     ]
 }
 
@@ -110,7 +110,7 @@ pub fn run_trace_check(rules: &TraceRules, input: &TraceCheckInput) -> TraceChec
 
         if !reasoning_found {
             errors.push(
-                "Missing reasoning export: add ContextLayer PR markdown to description or commit under docs/reasoning/".into(),
+                "Missing reasoning export: add Chreia PR markdown to description or commit under docs/reasoning/".into(),
             );
         }
     }
@@ -252,7 +252,7 @@ mod tests {
         let reasoning = dir.path().join("docs/reasoning");
         fs::create_dir_all(&reasoning).unwrap();
         let mut f = fs::File::create(reasoning.join("pr-1.md")).unwrap();
-        write!(f, "Exported from ContextLayer").unwrap();
+        write!(f, "Exported from Chreia").unwrap();
 
         let rules = TraceRules {
             require_reasoning_export: true,

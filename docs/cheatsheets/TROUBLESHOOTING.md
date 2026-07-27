@@ -1,4 +1,4 @@
-# ContextLayer — Troubleshooting
+# Chreia — Troubleshooting
 
 ## `ENOENT: no such file or directory, open '...\package.json'`
 

@@ -1,4 +1,4 @@
-# ContextLayer — command cheat sheet
+# Chreia — command cheat sheet
 
 One-page reference for **desktop**, **CLI binaries**, and **MCP**. Same data everywhere: `%USERPROFILE%\.contextlayer\graph.db` (blocks) + `%USERPROFILE%\.contextlayer\capture\` (session logs).
 
@@ -102,7 +102,7 @@ contextlayer-recorder list-bindings
 | `commit_checkpoint` | Decision moment — slices log seq range (not every prompt) |
 | `import_session` | Paste transcript → new workspace + draft blocks + log backfill |
 
-Example chat: *"Start ContextLayer capture for workspace ContextLayer product validation, then log a hypothesis block …"*
+Example chat: *"Start Chreia capture for workspace ContextLayer product validation, then log a hypothesis block …"*
 
 ---
 

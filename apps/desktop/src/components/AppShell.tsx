@@ -7,7 +7,7 @@ import type { AppShellOutletContext } from "../shellContext";
 import type { Workspace, WorkspaceHygieneReport } from "../types";
 
 const DESIGN_PARTNER_ISSUE_URL =
-  "https://github.com/sstanley-yelnatss/ContextLayer/issues/new?template=design-partner-feedback.yml";
+  "https://github.com/sstanley-yelnatss/Chreia/issues/new?template=design-partner-feedback.yml";
 
 function truncateName(name: string, max = 22): string {
   if (name.length <= max) return name;
@@ -81,7 +81,7 @@ export default function AppShell() {
             <div className="h-[9px] w-[9px] rounded-[2px] bg-accent" />
           </div>
           <span className="text-[13px] font-semibold tracking-tight text-foreground">
-            ContextLayer
+            Chreia
           </span>
         </div>
 

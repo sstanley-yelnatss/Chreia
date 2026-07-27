@@ -1,8 +1,8 @@
 [package]
 name = "contextlayer-desktop"
 version.workspace = true
-description = "ContextLayer — bounded epistemic tracking desktop shell"
-authors = ["ContextLayer"]
+description = "Chreia — bounded epistemic tracking desktop shell"
+authors = ["Chreia"]
 edition.workspace = true
 
 [lib]
