@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useOutletContext } from "react-router-dom";
+import { Archive, Plus, RotateCcw, X } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { useToast } from "../components/Toast";
 import type { AppShellOutletContext } from "../shellContext";
@@ -123,41 +124,48 @@ export default function WorkspaceListPage() {
       />
 
       <header className="mb-10">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Workspaces</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Workspaces</h1>
+        <p className="mt-2.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
           Local investigations for serious questions. Each workspace tracks what you
-          assume, try, observe, and conclude — then exports a reasoning receipt for PR
+          assume, try, observe, and conclude, then exports a reasoning receipt for PR
           review.
         </p>
       </header>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <input
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search workspaces…"
-          className="min-w-[12rem] flex-1 rounded-[3px] border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+          className="min-w-[12rem] flex-1 rounded-[3px] border border-border bg-input-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground"
         />
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={(e) => setShowArchived(e.target.checked)}
-            className="rounded border-border accent-[var(--accent)]"
-          />
+        <button
+          type="button"
+          onClick={() => setShowArchived((v) => !v)}
+          className={`cl-btn-ghost cl-btn-toolbar ${
+            showArchived ? "bg-[rgba(255,255,255,0.1)] text-foreground" : ""
+          }`}
+          aria-pressed={showArchived}
+        >
           Show archived
-        </label>
-      </div>
-
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted-foreground">Your list</h2>
+        </button>
         <button
           type="button"
           onClick={() => setShowForm(!showForm)}
-          className="cursor-pointer rounded-[3px] border border-border bg-[rgba(255,255,255,0.06)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[rgba(255,255,255,0.09)]"
+          className="cl-btn-ghost cl-btn-toolbar"
         >
-          {showForm ? "Cancel" : "New workspace"}
+          {showForm ? (
+            <>
+              <X size={13} className="text-foreground" />
+              <span>Cancel</span>
+            </>
+          ) : (
+            <>
+              <Plus size={13} className="text-foreground" />
+              <span>New workspace</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -202,8 +210,9 @@ export default function WorkspaceListPage() {
           </label>
           <button
             type="submit"
-            className="mt-4 cursor-pointer rounded-[3px] border border-border bg-[rgba(255,255,255,0.08)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[rgba(255,255,255,0.12)]"
+            className="cl-btn-ghost cl-btn-toolbar mt-4"
           >
+            <Plus size={13} className="text-foreground" />
             Create
           </button>
         </form>
@@ -248,9 +257,20 @@ export default function WorkspaceListPage() {
                 <button
                   type="button"
                   onClick={() => setArchiveConfirm(ws)}
-                  className="cl-btn-ghost shrink-0 self-center px-3 py-2 text-xs"
+                  className="inline-flex shrink-0 items-center gap-1.5 self-center px-2 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  title={isArchived ? "Restore workspace" : "Archive workspace"}
                 >
-                  {isArchived ? "Restore" : "Archive"}
+                  {isArchived ? (
+                    <>
+                      <RotateCcw size={13} />
+                      Restore
+                    </>
+                  ) : (
+                    <>
+                      <Archive size={13} />
+                      Archive
+                    </>
+                  )}
                 </button>
               </li>
             );

@@ -56,3 +56,36 @@ fn resolve_workspace_by_name_or_id() {
     assert_eq!(store.resolve_workspace_id("my hunt").unwrap(), ws.id);
     assert!(store.resolve_workspace_id("missing").is_err());
 }
+
+#[test]
+fn workspace_names_unique_among_active_case_insensitive() {
+    use contextlayer_db::GraphStore;
+
+    let dir = tempfile::tempdir().unwrap();
+    let store = GraphStore::open(&dir.path().join("graph.db")).unwrap();
+    let ws = store
+        .create_workspace("Auth Fix", "goal", "blank")
+        .unwrap();
+
+    let dup = store.create_workspace("auth fix", "other goal", "blank");
+    assert!(dup.is_err());
+    let err = dup.unwrap_err().to_string();
+    assert!(err.contains("already exists"), "{err}");
+
+    // Same workspace can keep/rename-to-same name on update
+    store
+        .update_workspace(&ws.id, "Auth Fix", "goal updated", "blank")
+        .unwrap();
+
+    store.set_workspace_archived(&ws.id, true).unwrap();
+    let reused = store
+        .create_workspace("Auth Fix", "fresh goal", "blank")
+        .unwrap();
+    assert_ne!(reused.id, ws.id);
+    assert_eq!(
+        store.resolve_workspace_id("Auth Fix").unwrap(),
+        reused.id,
+        "resolve prefers active over archived"
+    );
+}
+
