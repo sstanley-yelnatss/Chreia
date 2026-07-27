@@ -4,7 +4,7 @@
   "description": "ContextLayer monorepo — convenience scripts for the desktop app",
   "scripts": {
     "dev": "npm run tauri dev --prefix apps/desktop",
-    "desktop:install": "npm install --prefix apps/desktop",
+    "desktop:install": "cd apps/desktop && npm install",
     "desktop:sidecars": "powershell -ExecutionPolicy Bypass -File scripts/prepare-sidecars.ps1",
     "desktop:build": "npm run desktop:sidecars && npm run tauri build --prefix apps/desktop"
   }

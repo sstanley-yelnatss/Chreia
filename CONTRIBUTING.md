@@ -27,6 +27,10 @@ npm run desktop:install
 npm run dev
 ```
 
+From `apps/desktop`, `npm test` runs the Vitest unit suite.
+
+Work from a fresh clone. Don’t zip or vendor the whole working tree (local ignored paths like nested `node_modules`, GTM dumps, or a local `website/` copy are not part of the public surface).
+
 Docs: [docs/cheatsheets/TROUBLESHOOTING.md](./docs/cheatsheets/TROUBLESHOOTING.md) · [docs/cheatsheets/MCP-SETUP.md](./docs/cheatsheets/MCP-SETUP.md)
 
 ## Pull requests

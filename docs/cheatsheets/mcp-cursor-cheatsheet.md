@@ -81,15 +81,16 @@ Trace CI on PRs: `.contextlayer/rules.yml` + `cargo run -p contextlayer-trace-cl
 | **`save_block`** | **Primary.** One row with title + any of: hypothesis, action, evidence, conclusion + belief state + tags + block links |
 | `create_workspace` | New bounty / CTF / research workspace |
 
-### Legacy (single-node; use `save_block` instead when possible)
+### Node links (legacy rows only)
+
+Prefer block links via `save_block` → `link_to_block_ids`. These remain for older node-graph rows:
 
 | Tool | When to use |
 |------|-------------|
-| `create_hypothesis` | Log one hypothesis only |
-| `create_action` | Log one action only |
-| `create_evidence` | Log one evidence only (+ optional `source` URL) |
-| `save_conclusion` | Conclusion with `hypothesis_ids` + `evidence_ids` |
 | `add_link` | Link nodes: hypothesis→action, action→evidence, conclusion→hypothesis/evidence |
+| `list_links` / `remove_link` | Inspect or delete node links |
+
+Standalone `create_hypothesis` / `create_action` / `create_evidence` / `save_conclusion` were removed from MCP — use **`save_block`**.
 
 ---
 
