@@ -1,6 +1,6 @@
 # Example PR reasoning export
 
-Exported from ContextLayer — demo fixture for trace CI when PR body has no reasoning block.
+Exported from Chreia — demo fixture for trace CI when PR body has no reasoning block.
 
 ## PR Reasoning: auth token refresh
 

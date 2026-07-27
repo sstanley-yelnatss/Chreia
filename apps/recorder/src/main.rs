@@ -17,7 +17,7 @@ use contextlayer_trace::{
 #[derive(Parser)]
 #[command(
     name = "contextlayer-recorder",
-    about = "ContextLayer live capture — tails Cursor and Claude Code transcripts when a capture session is active"
+    about = "Chreia live capture — tails Cursor and Claude Code transcripts when a capture session is active"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -53,7 +53,7 @@ enum Commands {
     },
     /// List active capture sessions
     Status,
-    /// Bind a Cursor sanitized project folder to a ContextLayer workspace
+    /// Bind a Cursor sanitized project folder to a Chreia workspace
     BindCursorProject {
         #[arg(long)]
         cursor_project: String,

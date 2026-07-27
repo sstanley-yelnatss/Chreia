@@ -76,7 +76,7 @@ export default function HelpPage() {
 
       <Section title="Bundled tools (installer)">
         <p>
-          After install, these executables sit next to <strong className="text-foreground/90">ContextLayer.exe</strong>.
+          After install, these executables sit next to <strong className="text-foreground/90">Chreia.exe</strong>.
           You do not need Rust or a separate build for normal use.
         </p>
         {tools?.install_dir ? (

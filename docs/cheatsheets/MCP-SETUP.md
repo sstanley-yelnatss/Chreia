@@ -1,4 +1,4 @@
-# ContextLayer — MCP setup (Cursor, Claude Desktop, others)
+# Chreia — MCP setup (Cursor, Claude Desktop, others)
 
 Optional. Log and read reasoning blocks from an AI tool that supports **local stdio MCP**.
 
@@ -81,11 +81,11 @@ Override database path (optional):
 
 ### Global Cursor MCP
 
-Same JSON shape in Cursor **Settings → MCP** if you want ContextLayer in every project.
+Same JSON shape in Cursor **Settings → MCP** if you want Chreia in every project.
 
 ### Verify
 
-In chat: *"List my ContextLayer workspaces"* → should call `list_workspaces`.
+In chat: *"List my Chreia workspaces"* → should call `list_workspaces`.
 
 Tool reference: [mcp-cursor-cheatsheet.md](./mcp-cursor-cheatsheet.md).
 
@@ -151,7 +151,7 @@ Restart Claude Desktop completely after saving.
 
 ### Verify
 
-Ask: *"Use ContextLayer to list my workspaces"* or *"Call list_workspaces on ContextLayer"*.
+Ask: *"Use Chreia to list my workspaces"* or *"Call list_workspaces on Chreia"*.
 
 ---
 
@@ -171,7 +171,7 @@ Check that tool’s docs for where to put `mcpServers` JSON.
 
 ## 5. What to tell the agent
 
-ContextLayer tools are documented in [mcp-cursor-cheatsheet.md](./mcp-cursor-cheatsheet.md). Short version:
+Chreia tools are documented in [mcp-cursor-cheatsheet.md](./mcp-cursor-cheatsheet.md). Short version:
 
 - **Read first:** `list_workspaces`, `list_blocks`, `get_workspace_summary`, `get_workspace_hygiene`
 - **Write:** prefer **`save_block`** (partial updates: only send fields you change)

@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use contextlayer_trace::{run_trace_check, TraceCheckInput, TraceRules, TraceStore};
 
 #[derive(Parser)]
-#[command(name = "contextlayer-trace", about = "ContextLayer trace CI")]
+#[command(name = "contextlayer-trace", about = "Chreia trace CI")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

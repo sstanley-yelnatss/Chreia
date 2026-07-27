@@ -1,4 +1,4 @@
-# ContextLayer — Cursor MCP cheat sheet
+# Chreia — Cursor MCP cheat sheet
 
 Same database as the desktop app: `%USERPROFILE%\.contextlayer\graph.db`
 
@@ -131,7 +131,7 @@ On **create**, need ≥1 text field (hypothesis/action/evidence/conclusion). Tit
 
 ## Example chat prompts
 
-- *"List my ContextLayer workspaces"*
+- *"List my Chreia workspaces"*
 - *"List blocks in workspace X"*
 - *"Add evidence to the IDOR block: HTTP 200 with other user's data"*
 - *"Get hygiene report for workspace X"*

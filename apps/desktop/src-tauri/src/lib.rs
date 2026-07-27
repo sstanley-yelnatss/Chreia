@@ -659,7 +659,7 @@ pub fn run() {
             get_trace_summary_cmd,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building ContextLayer")
+        .expect("error while building Chreia")
         .run(|_app_handle, event| {
             if matches!(event, RunEvent::Exit) {
                 capture_watcher::stop();

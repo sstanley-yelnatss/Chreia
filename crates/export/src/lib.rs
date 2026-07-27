@@ -11,8 +11,8 @@ use contextlayer_core::{BeliefState, BlockSystemTag, WorkspaceTemplate};
 use contextlayer_db::{BlockEntry, GraphStore, WorkspaceHealthSummary, WorkspaceHygieneReport};
 
 /// Public site linked from every PR export footer ("sent from" distribution loop).
-/// Update when the real domain (contextlayer.app) cuts over.
-const SITE_URL: &str = "https://contextlayer-site.vercel.app";
+/// Public marketing site. Update again if a custom domain cuts over.
+const SITE_URL: &str = "https://chreia.vercel.app";
 
 /// Optional PR export metadata (B2 lite) + trace appendix hook.
 #[derive(Debug, Clone, Default)]
@@ -138,7 +138,7 @@ pub fn compile_agent_context_markdown(
     }
     md.push_str("---\n\n");
     md.push_str(
-        "ContextLayer MCP: `get_workspace_index` for tier-1 scan · `get_block` to hydrate one block · \
+        "Chreia MCP: `get_workspace_index` for tier-1 scan · `get_block` to hydrate one block · \
          `save_block` to log updates · `export_blocks` for PR handoff.\n",
     );
 
@@ -414,7 +414,7 @@ pub fn compile_pr_export_markdown_with_options(
 
     md.push_str("---\n\n");
     md.push_str(&format!(
-        "Reasoning appendix by [ContextLayer]({SITE_URL}) ({selected_count} of {total} blocks in this workspace).\n",
+        "Reasoning appendix by [Chreia]({SITE_URL}) ({selected_count} of {total} blocks in this workspace).\n",
     ));
     if let Some(note) = format_pr_hygiene_note(selected_count, unsettled_belief, incomplete) {
         md.push_str(&note);
@@ -772,7 +772,7 @@ mod tests {
         let md = compile_pr_export_markdown(&store, &ws.id, &[id_b.clone()]).unwrap();
         assert!(md.contains("PR Reasoning:"));
         assert!(
-            md.contains(&format!("[ContextLayer]({SITE_URL})")),
+            md.contains(&format!("[Chreia]({SITE_URL})")),
             "footer must carry the site link"
         );
         assert!(md.contains("Hypothesis:\n"));
@@ -825,7 +825,7 @@ mod tests {
         assert!(md.contains("Session trace"));
         let trace_pos = md.find("Session trace").expect("session trace section");
         let footer_pos = md
-            .find(&format!("[ContextLayer]({SITE_URL})"))
+            .find(&format!("[Chreia]({SITE_URL})"))
             .expect("site-link footer");
         assert!(
             footer_pos > trace_pos,

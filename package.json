@@ -1,7 +1,7 @@
 {
   "name": "contextlayer",
   "private": true,
-  "description": "ContextLayer monorepo — convenience scripts for the desktop app",
+  "description": "Chreia monorepo — convenience scripts for the desktop app",
   "scripts": {
     "dev": "npm run tauri dev --prefix apps/desktop",
     "desktop:install": "cd apps/desktop && npm install",
