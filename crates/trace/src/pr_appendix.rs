@@ -1,6 +1,6 @@
 //! Optional capture appendix for PR markdown export.
 
-use crate::branches::list_branches_for_workspace;
+use crate::branches::{list_branches_for_workspace, BranchStatus, CaptureBranchRecord};
 use crate::capture::{CaptureStore, LogMessage, LogReadLimits};
 use crate::capture_scope::resolve_capture_log_boundary;
 
@@ -163,7 +163,10 @@ pub fn compile_pr_trace_appendix_with_limits(
         log_slice_unavailable = unavailable;
     }
 
-    if commits.commits.is_empty() && log_messages.is_empty() && !include_log {
+    let branches = list_branches_for_workspace(capture, workspace_id)?;
+
+    if commits.commits.is_empty() && log_messages.is_empty() && !include_log && branches.is_empty()
+    {
         return Ok(None);
     }
 
@@ -172,6 +175,8 @@ pub fn compile_pr_trace_appendix_with_limits(
     md.push_str(
         "_Decision checkpoints and/or a capped slice of the workspace capture log. Not a full chat dump._\n\n",
     );
+
+    append_capture_branch_index(&mut md, capture, workspace_id, &branches)?;
 
     if !commits.commits.is_empty() {
         md.push_str("### Decision checkpoints\n\n");
@@ -226,6 +231,59 @@ pub fn compile_pr_trace_appendix_with_limits(
     }
 
     Ok(Some(md))
+}
+
+fn format_capture_branch_status(status: &str) -> &str {
+    match BranchStatus::parse(status) {
+        Some(BranchStatus::Active) => "active",
+        Some(BranchStatus::MergedConfirmed) => "confirmed into main",
+        Some(BranchStatus::MergedRejected) => "rejected",
+        None => status,
+    }
+}
+
+fn message_count_label(count: usize) -> String {
+    if count == 1 {
+        "1 message".into()
+    } else {
+        format!("{count} messages")
+    }
+}
+
+/// Index of capture lines (main + forks) using graph labels and merge state.
+fn append_capture_branch_index(
+    md: &mut String,
+    capture: &CaptureStore,
+    workspace_id: &str,
+    branches: &[CaptureBranchRecord],
+) -> Result<(), String> {
+    if branches.is_empty() {
+        return Ok(());
+    }
+
+    md.push_str("### Capture branches\n\n");
+
+    let main_count = capture
+        .read_log_messages_on_line(workspace_id, None)?
+        .len();
+    md.push_str(&format!(
+        "- `main` — {} · main\n",
+        message_count_label(main_count)
+    ));
+
+    for branch in branches {
+        let count = capture
+            .read_log_messages_on_line(workspace_id, Some(&branch.slug))?
+            .len();
+        let label = branch.label.replace('`', "'");
+        md.push_str(&format!(
+            "- `{label}` — {} · {}\n",
+            message_count_label(count),
+            format_capture_branch_status(&branch.status)
+        ));
+    }
+    md.push('\n');
+    Ok(())
 }
 
 fn apply_log_slice(messages: Vec<LogMessage>, mode: LogSliceMode, boundary: Option<u64>) -> Vec<LogMessage> {
@@ -455,5 +513,126 @@ mod tests {
         .unwrap()
         .unwrap();
         assert!(md.contains("No messages match this slice"));
+    }
+
+    fn write_branch_meta_for_test(
+        store: &CaptureStore,
+        ws: &str,
+        slug: &str,
+        label: &str,
+        status: &str,
+    ) {
+        let record = CaptureBranchRecord {
+            id: format!("id-{slug}"),
+            workspace_id: ws.to_string(),
+            slug: slug.to_string(),
+            label: label.to_string(),
+            status: status.to_string(),
+            created_at: "2026-01-01T00:00:00Z".into(),
+            main_log_seq_at_fork: 1,
+            merged_at: None,
+        };
+        let path = store.branch_meta_path(ws, slug);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(path, serde_json::to_string_pretty(&record).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn appendix_includes_capture_branch_index_with_labels_and_merge_state() {
+        let dir = TempDir::new().unwrap();
+        let store = CaptureStore::new(dir.path()).unwrap();
+        let ws = "ws-branches";
+
+        store
+            .append_message(ws, "user", "main one", "test", None)
+            .unwrap();
+        store
+            .append_message(ws, "user", "main two", "test", None)
+            .unwrap();
+
+        write_branch_meta_for_test(
+            &store,
+            ws,
+            "rejection-test-a",
+            "rejection_test_A",
+            "merged_rejected",
+        );
+        write_branch_meta_for_test(
+            &store,
+            ws,
+            "test-capture-d",
+            "test_capture_d",
+            "merged_confirmed",
+        );
+        write_branch_meta_for_test(&store, ws, "still-open", "still_open", "active");
+
+        store
+            .append_message_on_line(
+                ws,
+                Some("rejection-test-a"),
+                "user",
+                "reject path",
+                "test",
+                None,
+            )
+            .unwrap();
+        store
+            .append_message_on_line(
+                ws,
+                Some("test-capture-d"),
+                "user",
+                "confirm a",
+                "test",
+                None,
+            )
+            .unwrap();
+        store
+            .append_message_on_line(
+                ws,
+                Some("test-capture-d"),
+                "assistant",
+                "confirm b",
+                "test",
+                None,
+            )
+            .unwrap();
+
+        store
+            .commit(
+                ws,
+                "Ready for PR",
+                "",
+                "ship it",
+                vec![],
+                None,
+                vec![],
+                None,
+                None,
+            )
+            .unwrap();
+
+        let md = compile_pr_trace_appendix_with_options(
+            &store,
+            ws,
+            &PrTraceAppendixOptions {
+                include_checkpoints: true,
+                include_log: false,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+        .unwrap();
+
+        assert!(md.contains("### Capture branches"));
+        assert!(md.contains("- `main` — 2 messages · main"));
+        assert!(md.contains("- `rejection_test_A` — 1 message · rejected"));
+        assert!(md.contains("- `test_capture_d` — 2 messages · confirmed into main"));
+        assert!(md.contains("- `still_open` — 0 messages · active"));
+        assert!(md.contains("Decision checkpoints"));
+        // Prefer graph labels over slugs / numbered placeholders
+        assert!(!md.contains("branch 1"));
+        assert!(!md.contains("`rejection-test-a`"));
     }
 }

@@ -77,6 +77,7 @@ impl GraphStore {
 
     pub fn create_workspace(&self, name: &str, goal: &str, template: &str) -> Result<Workspace, DbError> {
         let template = validate_workspace(name, goal, template).map_err(map_admission)?;
+        self.ensure_unique_workspace_name(name, None)?;
         let now = Utc::now();
         let id = Uuid::new_v4().to_string();
         let now_s = now.to_rfc3339();
@@ -110,6 +111,7 @@ impl GraphStore {
     ) -> Result<Workspace, DbError> {
         let template = validate_workspace(name, goal, template).map_err(map_admission)?;
         let existing = self.get_workspace(id)?;
+        self.ensure_unique_workspace_name(name, Some(id))?;
         self.snapshot_version(
             EntityType::Workspace,
             id,
@@ -168,6 +170,7 @@ impl GraphStore {
     }
 
     /// Resolve a workspace UUID or exact name (case-insensitive) to id.
+    /// Prefers non-archived matches when resolving by name.
     pub fn resolve_workspace_id(&self, name_or_id: &str) -> Result<String, DbError> {
         let key = name_or_id.trim();
         if key.is_empty() {
@@ -177,13 +180,21 @@ impl GraphStore {
             return Ok(key.to_string());
         }
         let mut stmt = self.conn.prepare(
-            "SELECT id FROM workspaces WHERE name = ?1 COLLATE NOCASE ORDER BY updated_at DESC",
+            "SELECT id, archived_at FROM workspaces WHERE name = ?1 COLLATE NOCASE ORDER BY updated_at DESC",
         )?;
         let mut rows = stmt.query([key])?;
-        let mut ids = Vec::new();
+        let mut active = Vec::new();
+        let mut archived = Vec::new();
         while let Some(row) = rows.next()? {
-            ids.push(row.get::<_, String>(0)?);
+            let id: String = row.get(0)?;
+            let archived_at: Option<String> = row.get(1)?;
+            if archived_at.is_some() {
+                archived.push(id);
+            } else {
+                active.push(id);
+            }
         }
+        let ids = if !active.is_empty() { active } else { archived };
         match ids.len() {
             0 => Err(DbError::NotFound),
             1 => Ok(ids[0].clone()),
@@ -837,6 +848,34 @@ fn parse_ts(s: &str) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(s)
         .map(|dt| dt.with_timezone(&Utc))
         .unwrap_or_else(|_| Utc::now())
+}
+
+impl GraphStore {
+    /// Active (non-archived) workspace names must be unique case-insensitively.
+    /// Archived workspaces free the name for reuse.
+    fn ensure_unique_workspace_name(
+        &self,
+        name: &str,
+        except_workspace_id: Option<&str>,
+    ) -> Result<(), DbError> {
+        let trimmed = name.trim();
+        let mut stmt = self.conn.prepare(
+            "SELECT id FROM workspaces
+             WHERE archived_at IS NULL AND lower(name) = lower(?1)",
+        )?;
+        let conflicts: Vec<String> = stmt
+            .query_map(params![trimmed], |row| row.get(0))?
+            .filter_map(Result::ok)
+            .filter(|id| except_workspace_id.map(|ex| ex != id).unwrap_or(true))
+            .collect();
+        if conflicts.is_empty() {
+            Ok(())
+        } else {
+            Err(DbError::InvalidInput(format!(
+                "workspace name \"{trimmed}\" already exists"
+            )))
+        }
+    }
 }
 
 fn node_table(node_type: &str) -> Result<&'static str, DbError> {

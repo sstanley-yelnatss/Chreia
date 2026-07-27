@@ -28,7 +28,7 @@ impl BranchStatus {
         }
     }
 
-    fn parse(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s {
             "active" => Some(Self::Active),
             "merged_confirmed" => Some(Self::MergedConfirmed),

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { MessageSquarePlus, Plus } from "lucide-react";
+import { MessageSquarePlus, Plus, Home } from "lucide-react";
 import { fetchWorkspaceHygiene, initDatabase, listWorkspaces } from "../api";
 import type { AppShellOutletContext } from "../shellContext";
 import type { Workspace, WorkspaceHygieneReport } from "../types";
@@ -66,6 +66,7 @@ export default function AppShell() {
   const openLoops = hygiene?.summary.still_open ?? 0;
   const reasoningDebt = hygiene?.summary.reasoning_debt ?? 0;
   const onHelp = location.pathname === "/help";
+  const onHome = location.pathname === "/";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -179,6 +180,17 @@ export default function AppShell() {
             <Plus size={13} />
             <span>New workspace</span>
           </button>
+          <Link
+            to="/"
+            className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-[13px] transition-colors ${
+              onHome
+                ? "bg-[rgba(255,255,255,0.06)] text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Home size={13} />
+            <span>Home</span>
+          </Link>
         </div>
       </aside>
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { Camera, Download, Pencil, Plus, Zap } from "lucide-react";
+import { Archive, Camera, Download, Pencil, Plus, Zap } from "lucide-react";
 import {
   captureStatus,
   commitTraceCheckpoint,
@@ -11,6 +11,7 @@ import {
   fetchWorkspaceHygiene,
   listWorkspaces,
   normalizeCaptureCandidates,
+  setWorkspaceArchived,
   startCapture,
   stopCapture,
   TRACE_LOG_SLICE_OPTIONS,
@@ -23,11 +24,13 @@ import CapturePickerDialog from "../components/CapturePickerDialog";
 import CheckpointDialog, {
   type CheckpointFormValues,
 } from "../components/CheckpointDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import HygienePanel from "../components/HygienePanel";
 import PromptDialog from "../components/PromptDialog";
 import SessionGraphDetailPanel from "../components/SessionGraphDetailPanel";
 import SessionGraphView from "../components/SessionGraphView";
 import { useToast } from "../components/Toast";
+import type { AppShellOutletContext } from "../shellContext";
 import {
   beliefStateLabel,
   hygieneCategoryLabel,
@@ -83,8 +86,11 @@ function blockRevision(block: BlockEntry): string {
 
 export default function TimelinePage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
+  const navigate = useNavigate();
+  const { refreshWorkspaces } = useOutletContext<AppShellOutletContext>();
   const { showToast } = useToast();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
   const [allBlocks, setAllBlocks] = useState<BlockEntry[]>([]);
   const [hygiene, setHygiene] = useState<WorkspaceHygieneReport | null>(null);
   const [hygieneLoading, setHygieneLoading] = useState(true);
@@ -502,10 +508,32 @@ export default function TimelinePage() {
     setGoalDraft("");
   }
 
+  async function confirmArchiveWorkspace() {
+    if (!workspace) return;
+    const name = workspace.name;
+    setArchiveConfirmOpen(false);
+    try {
+      await setWorkspaceArchived(workspace.id, true);
+      await refreshWorkspaces();
+      showToast(`Archived "${name}". Turn on Show archived on Home to restore it.`);
+      navigate("/");
+    } catch (e) {
+      showToast({ message: String(e), kind: "error" });
+    }
+  }
+
   if (!workspaceId) return null;
 
   return (
     <div className="flex h-full min-h-0">
+      <ConfirmDialog
+        open={archiveConfirmOpen}
+        title="Archive workspace?"
+        message={`"${workspace?.name ?? "This workspace"}" will move off the main list. You can restore it anytime from Home → Show archived.`}
+        confirmLabel="Archive"
+        onConfirm={() => void confirmArchiveWorkspace()}
+        onCancel={() => setArchiveConfirmOpen(false)}
+      />
       <PromptDialog
         open={prExportDialogOpen}
         title="Export for PR"
@@ -655,6 +683,15 @@ export default function TimelinePage() {
             </div>
 
             <div className="mt-1 flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setArchiveConfirmOpen(true)}
+                className="cl-btn-ghost cl-btn-toolbar"
+                title="Archive workspace"
+              >
+                <Archive size={13} />
+                Archive
+              </button>
               <button type="button" onClick={handleCheckpoint} className="cl-btn-ghost cl-btn-toolbar">
                 <Camera size={13} />
                 Checkpoint
