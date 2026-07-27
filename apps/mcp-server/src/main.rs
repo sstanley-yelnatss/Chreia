@@ -96,38 +96,6 @@ fn default_template() -> String {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-struct TextNodeArgs {
-    workspace_id: String,
-    /// Recorded verbatim — no normalization
-    text: String,
-}
-
-#[derive(Debug, Deserialize, schemars::JsonSchema)]
-struct CreateEvidenceArgs {
-    workspace_id: String,
-    text: String,
-    source: Option<String>,
-}
-
-#[derive(Debug, Deserialize, schemars::JsonSchema)]
-struct SaveConclusionArgs {
-    workspace_id: String,
-    text: String,
-    /// confirmed | rejected | uncertain | refined
-    outcome: String,
-    /// none | pivot | act | ignore | defer
-    #[serde(default = "default_tag")]
-    tag: String,
-    confidence: Option<f64>,
-    hypothesis_ids: Vec<String>,
-    evidence_ids: Vec<String>,
-}
-
-fn default_tag() -> String {
-    "none".to_string()
-}
-
-#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct AddLinkArgs {
     workspace_id: String,
     from_type: String,
@@ -773,66 +741,6 @@ impl ContextLayerMcp {
     }
 
     #[tool(
-        description = "Log a hypothesis — uncertain or testable claim. Text is stored exactly as provided."
-    )]
-    fn create_hypothesis(
-        &self,
-        Parameters(args): Parameters<TextNodeArgs>,
-    ) -> Result<CallToolResult, McpError> {
-        let node = self.with_store(|store| store.create_hypothesis(&args.workspace_id, &args.text))?;
-        ok_json(json!({ "hypothesis": node }))
-    }
-
-    #[tool(
-        description = "Log an action — a test or operation you performed (curl, scan, manual step). Text stored verbatim."
-    )]
-    fn create_action(
-        &self,
-        Parameters(args): Parameters<TextNodeArgs>,
-    ) -> Result<CallToolResult, McpError> {
-        let node = self.with_store(|store| store.create_action(&args.workspace_id, &args.text))?;
-        ok_json(json!({ "action": node }))
-    }
-
-    #[tool(
-        description = "Log evidence — raw observed output (status codes, tool output, response snippets). Not interpretation."
-    )]
-    fn create_evidence(
-        &self,
-        Parameters(args): Parameters<CreateEvidenceArgs>,
-    ) -> Result<CallToolResult, McpError> {
-        let node = self.with_store(|store| {
-            store.create_evidence(
-                &args.workspace_id,
-                &args.text,
-                args.source.as_deref(),
-            )
-        })?;
-        ok_json(json!({ "evidence": node }))
-    }
-
-    #[tool(
-        description = "Save a conclusion — requires at least one hypothesis_id and one evidence_id. Text stored verbatim."
-    )]
-    fn save_conclusion(
-        &self,
-        Parameters(args): Parameters<SaveConclusionArgs>,
-    ) -> Result<CallToolResult, McpError> {
-        let node = self.with_store(|store| {
-            store.save_conclusion(
-                &args.workspace_id,
-                &args.text,
-                &args.outcome,
-                &args.tag,
-                args.confidence,
-                &args.hypothesis_ids,
-                &args.evidence_ids,
-            )
-        })?;
-        ok_json(json!({ "conclusion": node }))
-    }
-
-    #[tool(
         description = "Workspace reasoning health — orphan blocks, stale investigations, dead ends, open hypotheses with no action, decision log. Call before suggesting next tests."
     )]
     fn get_workspace_hygiene(
@@ -844,7 +752,7 @@ impl ContextLayerMcp {
     }
 
     #[tool(
-        description = "Save a reasoning block — one timeline row with optional hypothesis, action, evidence, conclusion. Title-only blocks are allowed on create. Text verbatim. On update (block_id or block_title), omitted fields are preserved — only send fields you want to change. Prefer block_title when the user names a block. Prefer this over create_* tools."
+        description = "Save a reasoning block — one timeline row with optional hypothesis, action, evidence, conclusion. Title-only blocks are allowed on create. Text verbatim. On update (block_id or block_title), omitted fields are preserved — only send fields you want to change. Prefer block_title when the user names a block."
     )]
     fn save_block(
         &self,
@@ -1039,7 +947,7 @@ impl ServerHandler for ContextLayerMcp {
              bind_capture_project only maps Cursor project → workspace — it does not record by itself. \
              get_context_log / get_context_commits for tiered reads; commit_checkpoint slices the log. \
              list_links / remove_link for node links; list_block_links / remove_block_link for block links. \
-             Prefer save_block over individual create_* tools."
+             Primary write path is save_block."
                 .to_string(),
         )
     }

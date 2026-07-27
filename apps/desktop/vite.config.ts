@@ -7,6 +7,10 @@ const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+  },
 
   clearScreen: false,
   server: {

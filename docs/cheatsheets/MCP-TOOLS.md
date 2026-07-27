@@ -92,16 +92,9 @@ Blocks ordered by **created_at** (oldest first).
 
 ---
 
-## Write — legacy nodes (avoid if possible)
+## Write — blocks only
 
-Lower-level tools from pre-block model. Use **`save_block`** instead unless you need loose unlinked nodes.
-
-| Tool | What it does | Key params |
-|------|----------------|------------|
-| **`create_hypothesis`** | Log a standalone hypothesis node. | `workspace_id`, `text` |
-| **`create_action`** | Log a standalone action node. | `workspace_id`, `text` |
-| **`create_evidence`** | Log standalone evidence. | `workspace_id`, `text`, optional `source` |
-| **`save_conclusion`** | Log conclusion linked to hypothesis + evidence IDs. | `workspace_id`, `text`, `outcome`, `tag`, optional `confidence`, `hypothesis_ids[]`, `evidence_ids[]` |
+Primary write path is **`save_block`**. Standalone node tools (`create_hypothesis`, `create_action`, `create_evidence`, `save_conclusion`) were removed from the MCP/desktop command surface; use `save_block` for new reasoning. Node link helpers (`add_link` / `list_links` / `remove_link`) remain for any remaining legacy node rows.
 
 ---
 

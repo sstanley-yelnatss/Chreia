@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use contextlayer_db::{default_db_path, BlockEntry, GraphStore, PickerNode, SaveBlockInput, TimelineEntry};
+use contextlayer_db::{default_db_path, BlockEntry, GraphStore, PickerNode, SaveBlockInput};
 use contextlayer_export::compile_workspace_summary_markdown;
 use contextlayer_export::{compile_agent_context_markdown, compile_pr_export_markdown_with_options, PrExportOptions};
 use contextlayer_trace::{
@@ -154,58 +154,6 @@ fn update_workspace(
 }
 
 #[tauri::command]
-fn create_hypothesis(
-    state: State<'_, AppState>,
-    workspace_id: String,
-    text: String,
-) -> Result<contextlayer_core::Hypothesis, String> {
-    state.with_store(|store| store.create_hypothesis(&workspace_id, &text))
-}
-
-#[tauri::command]
-fn create_action(
-    state: State<'_, AppState>,
-    workspace_id: String,
-    text: String,
-) -> Result<contextlayer_core::Action, String> {
-    state.with_store(|store| store.create_action(&workspace_id, &text))
-}
-
-#[tauri::command]
-fn create_evidence(
-    state: State<'_, AppState>,
-    workspace_id: String,
-    text: String,
-    source: Option<String>,
-) -> Result<contextlayer_core::Evidence, String> {
-    state.with_store(|store| store.create_evidence(&workspace_id, &text, source.as_deref()))
-}
-
-#[tauri::command]
-fn save_conclusion(
-    state: State<'_, AppState>,
-    workspace_id: String,
-    text: String,
-    outcome: String,
-    tag: String,
-    confidence: Option<f64>,
-    hypothesis_ids: Vec<String>,
-    evidence_ids: Vec<String>,
-) -> Result<contextlayer_core::Conclusion, String> {
-    state.with_store(|store| {
-        store.save_conclusion(
-            &workspace_id,
-            &text,
-            &outcome,
-            &tag,
-            confidence,
-            &hypothesis_ids,
-            &evidence_ids,
-        )
-    })
-}
-
-#[tauri::command]
 fn add_link(
     state: State<'_, AppState>,
     workspace_id: String,
@@ -326,16 +274,6 @@ fn add_block_link(
     to_block_id: String,
 ) -> Result<contextlayer_core::BlockLink, String> {
     state.with_store(|store| store.add_block_link(&workspace_id, &from_block_id, &to_block_id))
-}
-
-#[tauri::command]
-fn fetch_timeline(
-    state: State<'_, AppState>,
-    workspace_id: String,
-    ascending: bool,
-    types: Option<Vec<String>>,
-) -> Result<Vec<TimelineEntry>, String> {
-    state.with_store(|store| store.fetch_timeline(&workspace_id, ascending, types))
 }
 
 #[tauri::command]
@@ -694,10 +632,6 @@ pub fn run() {
             set_workspace_archived,
             create_workspace,
             update_workspace,
-            create_hypothesis,
-            create_action,
-            create_evidence,
-            save_conclusion,
             add_link,
             remove_link,
             soft_delete_node,
@@ -708,7 +642,6 @@ pub fn run() {
             soft_delete_block,
             list_blocks_for_picker,
             add_block_link,
-            fetch_timeline,
             list_picker_nodes,
             export_workspace_summary,
             export_pr_reasoning,
