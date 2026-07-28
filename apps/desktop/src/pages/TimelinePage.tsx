@@ -615,7 +615,10 @@ export default function TimelinePage() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="shrink-0 border-b border-border px-6 pb-4 pt-5">
+        <header
+          className="shrink-0 border-b border-border py-5 pl-6"
+          style={{ paddingRight: "calc(var(--window-controls-width) + 1rem)" }}
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <h1 className="font-mono-ui truncate text-[17px] font-semibold tracking-tight text-foreground">

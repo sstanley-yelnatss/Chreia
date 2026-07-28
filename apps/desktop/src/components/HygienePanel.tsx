@@ -17,7 +17,7 @@ export default function HygienePanel({
 }: Props) {
   if (loading) {
     return (
-      <aside className="w-72 shrink-0 border-l border-border bg-card/50 p-5">
+      <aside className="w-72 shrink-0 border-l border-border bg-card/50 px-5 pb-5 pt-[calc(var(--titlebar-clearance)+0.75rem)]">
         <p className="text-sm text-muted-foreground">Loading health…</p>
       </aside>
     );
@@ -36,7 +36,7 @@ export default function HygienePanel({
     : [];
 
   return (
-    <aside className="max-h-full w-72 shrink-0 overflow-y-auto border-l border-border bg-card/50 p-5">
+    <aside className="max-h-full w-72 shrink-0 overflow-y-auto border-l border-border bg-card/50 px-5 pb-5 pt-[calc(var(--titlebar-clearance)+0.75rem)]">
       <h2 className="mb-4 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
         Workspace health
       </h2>

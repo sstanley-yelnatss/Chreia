@@ -145,7 +145,7 @@ export default function SessionGraphDetailPanel({
     showMessages;
 
   return (
-    <aside className="flex max-h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border bg-card/50">
+    <aside className="flex max-h-full w-80 shrink-0 flex-col overflow-hidden border-l border-border bg-card/50 pt-[var(--titlebar-clearance)]">
       <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border px-4 py-3">
         <div className="min-w-0">
           <h2 className="text-[13px] font-semibold text-foreground">{kindTitle(row.kind)}</h2>
