@@ -12,9 +12,12 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Chreia",
         "width": 1100,
-        "height": 720
+        "height": 720,
+        "decorations": false,
+        "shadow": true
       }
     ],
     "security": {

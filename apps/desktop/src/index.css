@@ -123,7 +123,8 @@ label:has(input[type="radio"]) {
   }
 
   .cl-panel-aside {
-    @apply max-h-full w-[28rem] shrink-0 overflow-y-auto border-l border-border bg-card/80 p-6;
+    @apply max-h-full w-[28rem] shrink-0 overflow-y-auto border-l border-border bg-card/80 px-6 pb-6;
+    padding-top: calc(var(--titlebar-clearance) + 0.75rem);
   }
 
   .cl-dialog {

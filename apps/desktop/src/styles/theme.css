@@ -33,6 +33,9 @@
   --belief-confirmed: #34d399;
   --belief-rejected: #f87171;
   --hygiene-warn: #fb7185;
+  /* Space under overlay window controls so right panels / toolbars clear them */
+  --titlebar-clearance: 2.75rem;
+  --window-controls-width: 8.5rem;
 }
 
 @theme inline {
