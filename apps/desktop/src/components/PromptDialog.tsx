@@ -8,9 +8,15 @@ interface Props {
   placeholder?: string;
   defaultValue?: string;
   confirmLabel: string;
+  /** Optional second action (e.g. copy without publish) */
+  secondaryConfirmLabel?: string;
   cancelLabel?: string;
+  confirmDisabled?: boolean;
+  /** Wider dialog for multi-button footers */
+  wide?: boolean;
   children?: React.ReactNode;
   onConfirm: (value: string) => void;
+  onSecondaryConfirm?: (value: string) => void;
   onCancel: () => void;
 }
 
@@ -22,9 +28,13 @@ export default function PromptDialog({
   placeholder,
   defaultValue = "",
   confirmLabel,
+  secondaryConfirmLabel,
   cancelLabel = "Cancel",
+  confirmDisabled = false,
+  wide = false,
   children,
   onConfirm,
+  onSecondaryConfirm,
   onCancel,
 }: Props) {
   const [value, setValue] = useState(defaultValue);
@@ -37,8 +47,11 @@ export default function PromptDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (confirmDisabled) return;
     onConfirm(value.trim());
   }
+
+  const hasSecondary = Boolean(secondaryConfirmLabel && onSecondaryConfirm);
 
   return (
     <div
@@ -50,7 +63,7 @@ export default function PromptDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="prompt-dialog-title"
-        className="cl-dialog max-w-md"
+        className={`cl-dialog ${wide || hasSecondary ? "max-w-xl" : "max-w-md"}`}
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
       >
@@ -71,19 +84,35 @@ export default function PromptDialog({
             className="cl-input"
           />
         </label>
-        <div className="mt-5 flex justify-end gap-2">
+        <div
+          className={
+            hasSecondary
+              ? "mt-5 flex flex-nowrap items-center justify-center gap-2"
+              : "mt-5 flex flex-nowrap items-center justify-end gap-2"
+          }
+        >
+          <button
+            type="submit"
+            disabled={confirmDisabled}
+            className="cl-btn-export shrink-0 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            {confirmLabel}
+          </button>
+          {hasSecondary && (
+            <button
+              type="button"
+              onClick={() => onSecondaryConfirm!(value.trim())}
+              className="cl-btn-ghost shrink-0 px-3 py-2 text-sm"
+            >
+              {secondaryConfirmLabel}
+            </button>
+          )}
           <button
             type="button"
             onClick={onCancel}
-            className="cl-btn-ghost px-4 py-2 text-sm"
+            className="cl-btn-ghost shrink-0 px-3 py-2 text-sm"
           >
             {cancelLabel}
-          </button>
-          <button
-            type="submit"
-            className="cl-btn-export px-4 py-2 text-sm"
-          >
-            {confirmLabel}
           </button>
         </div>
       </form>

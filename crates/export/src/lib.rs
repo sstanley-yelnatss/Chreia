@@ -10,9 +10,8 @@ use std::path::Path;
 use contextlayer_core::{BeliefState, BlockSystemTag, WorkspaceTemplate};
 use contextlayer_db::{BlockEntry, GraphStore, WorkspaceHealthSummary, WorkspaceHygieneReport};
 
-/// Public site linked from every PR export footer ("sent from" distribution loop).
-/// Public marketing site. Update again if a custom domain cuts over.
-const SITE_URL: &str = "https://chreia.vercel.app";
+/// Default public site when callers omit `site_url` (override via env / desktop config).
+pub const DEFAULT_SITE_URL: &str = "https://chreia.vercel.app";
 
 /// Optional PR export metadata (B2 lite) + trace appendix hook.
 #[derive(Debug, Clone, Default)]
@@ -22,6 +21,8 @@ pub struct PrExportOptions {
     pub git_sha: Option<String>,
     /// When set, appended after block export (from capture store).
     pub trace_appendix: Option<String>,
+    /// Public site base for footer link (no trailing slash). Defaults to [`DEFAULT_SITE_URL`].
+    pub site_url: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -412,9 +413,17 @@ pub fn compile_pr_export_markdown_with_options(
         }
     }
 
+    let site = options
+        .site_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or(DEFAULT_SITE_URL)
+        .trim_end_matches('/');
+
     md.push_str("---\n\n");
     md.push_str(&format!(
-        "Reasoning appendix by [Chreia]({SITE_URL}) ({selected_count} of {total} blocks in this workspace).\n",
+        "Reasoning appendix by [Chreia]({site}) ({selected_count} of {total} blocks in this workspace).\n",
     ));
     if let Some(note) = format_pr_hygiene_note(selected_count, unsettled_belief, incomplete) {
         md.push_str(&note);
@@ -772,7 +781,7 @@ mod tests {
         let md = compile_pr_export_markdown(&store, &ws.id, &[id_b.clone()]).unwrap();
         assert!(md.contains("PR Reasoning:"));
         assert!(
-            md.contains(&format!("[Chreia]({SITE_URL})")),
+            md.contains(&format!("[Chreia]({DEFAULT_SITE_URL})")),
             "footer must carry the site link"
         );
         assert!(md.contains("Hypothesis:\n"));
@@ -816,6 +825,7 @@ mod tests {
                 pr_number: Some("42".into()),
                 git_sha: Some("abc123def456".into()),
                 trace_appendix: Some("## Session trace\n\n_checkpoint note_".into()),
+                site_url: None,
             },
         )
         .unwrap();
@@ -825,7 +835,7 @@ mod tests {
         assert!(md.contains("Session trace"));
         let trace_pos = md.find("Session trace").expect("session trace section");
         let footer_pos = md
-            .find(&format!("[Chreia]({SITE_URL})"))
+            .find(&format!("[Chreia]({DEFAULT_SITE_URL})"))
             .expect("site-link footer");
         assert!(
             footer_pos > trace_pos,

@@ -373,6 +373,7 @@ impl ContextLayerMcp {
                 pr_number: args.pr_number.clone(),
                 git_sha: args.git_sha.clone(),
                 trace_appendix: trace_appendix.clone(),
+                site_url: std::env::var("CHREIA_PUBLIC_URL").ok(),
             };
             compile_pr_export_markdown_with_options(store, &args.workspace_id, &ids, &options)
                 .map_err(DbError::InvalidInput)

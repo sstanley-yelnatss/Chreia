@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { Archive, Camera, Download, Pencil, Plus, Zap } from "lucide-react";
+import { Archive, Camera, Download, Link2, Pencil, Plus, Zap } from "lucide-react";
 import {
   captureStatus,
   commitTraceCheckpoint,
@@ -11,6 +11,7 @@ import {
   fetchWorkspaceHygiene,
   listWorkspaces,
   normalizeCaptureCandidates,
+  recordShareHistory,
   setWorkspaceArchived,
   startCapture,
   stopCapture,
@@ -19,6 +20,12 @@ import {
   type CaptureCandidate,
   type TraceLogSlice,
 } from "../api";
+import {
+  buildShareSnapshot,
+  composePrClipboard,
+  publishShareTrail,
+} from "../lib/sharePublish";
+import { generateLocalSharePassword } from "../lib/sharePassword";
 import BlockPanel from "../components/BlockPanel";
 import CapturePickerDialog from "../components/CapturePickerDialog";
 import CheckpointDialog, {
@@ -29,6 +36,7 @@ import HygienePanel from "../components/HygienePanel";
 import PromptDialog from "../components/PromptDialog";
 import SessionGraphDetailPanel from "../components/SessionGraphDetailPanel";
 import SessionGraphView from "../components/SessionGraphView";
+import ShareHistoryDialog from "../components/ShareHistoryDialog";
 import { useToast } from "../components/Toast";
 import type { AppShellOutletContext } from "../shellContext";
 import {
@@ -118,6 +126,10 @@ export default function TimelinePage() {
   const [captureLogBoundaryAvailable, setCaptureLogBoundaryAvailable] = useState(false);
   const [includeTraceBranchLogsInPr, setIncludeTraceBranchLogsInPr] = useState(false);
   const [prExportDialogOpen, setPrExportDialogOpen] = useState(false);
+  const [prExportBusy, setPrExportBusy] = useState(false);
+  const [sharePassword, setSharePassword] = useState("");
+  const [shareHistoryOpen, setShareHistoryOpen] = useState(false);
+  const [protectShareWithPassword, setProtectShareWithPassword] = useState(false);
   const [checkpointDialogOpen, setCheckpointDialogOpen] = useState(false);
   const [workspaceView, setWorkspaceView] = useState<"timeline" | "session">("timeline");
   const [sessionGraph, setSessionGraph] = useState<SessionGraph | null>(null);
@@ -335,24 +347,83 @@ export default function TimelinePage() {
       showToast({ message: "Select at least one block for PR export", kind: "error" });
       return;
     }
+    setSharePassword("");
     setPrExportDialogOpen(true);
   }
 
   async function confirmPrExport(prNumberInput: string) {
-    if (!workspaceId) return;
+    if (!workspaceId || !workspace) return;
+    if (protectShareWithPassword && sharePassword.trim().length < 4) {
+      showToast({
+        message: "Share password must be at least 4 characters",
+        kind: "error",
+      });
+      return;
+    }
     setPrExportDialogOpen(false);
     const prNumber = prNumberInput || undefined;
+    setPrExportBusy(true);
     try {
-      const md = await exportPrReasoning(workspaceId, [...selectedForPr], {
+      const snapshot = await buildShareSnapshot({
+        workspace,
+        blockIds: [...selectedForPr],
         includeTraceCheckpoints: includeTraceCheckpointsInPr,
         includeTraceLog: includeTraceLogInPr,
         includeTraceBranchLogs: includeTraceBranchLogsInPr,
         traceLogSlice: traceLogSliceInPr,
         prNumber,
       });
+      const password = protectShareWithPassword ? sharePassword.trim() : null;
+      const published = await publishShareTrail({
+        snapshot,
+        password,
+        generatePassword: false,
+      });
+      const md = composePrClipboard(snapshot.receipt_markdown, published.url);
+      await writeText(md);
+      try {
+        await recordShareHistory({
+          workspaceId: workspace.id,
+          workspaceName: workspace.name,
+          token: published.token,
+          url: published.url,
+          password: password ?? published.password,
+          passwordSet: Boolean(password || published.password_set),
+          receiptMarkdown: md,
+          publishedAt: snapshot.published_at,
+          expiresAt: published.expires_at,
+        });
+      } catch {
+        /* history is best-effort; publish already succeeded */
+      }
+      if (password) {
+        showToast(
+          `Published session trace & copied PR summary. Password saved in Recent shares.`,
+        );
+      } else {
+        showToast(
+          `Published session trace & copied PR summary (${selectedForPr.size} block${selectedForPr.size === 1 ? "" : "s"}).`,
+        );
+      }
+    } catch (e) {
+      showToast({ message: String(e), kind: "error" });
+    } finally {
+      setPrExportBusy(false);
+    }
+  }
+
+  async function confirmPrExportReceiptOnly(prNumberInput: string) {
+    if (!workspaceId) return;
+    setPrExportDialogOpen(false);
+    const prNumber = prNumberInput || undefined;
+    try {
+      const md = await exportPrReasoning(workspaceId, [...selectedForPr], {
+        includeTrace: false,
+        prNumber,
+      });
       await writeText(md);
       showToast(
-        `PR reasoning export copied (${selectedForPr.size} block${selectedForPr.size === 1 ? "" : "s"})`,
+        `PR receipt copied (${selectedForPr.size} block${selectedForPr.size === 1 ? "" : "s"}; no session trace link)`,
       );
     } catch (e) {
       showToast({ message: String(e), kind: "error" });
@@ -537,16 +608,22 @@ export default function TimelinePage() {
       <PromptDialog
         open={prExportDialogOpen}
         title="Export for PR"
-        message="Optional. Adds PR metadata to the export header."
+        message="Publishes the session trace to a Chreia link and copies a short PR receipt (blocks + trace URL). Options below go into the hosted viewer, not the PR body."
         label="PR number (optional)"
         placeholder="e.g. 42"
-        confirmLabel="Copy export"
+        confirmLabel={prExportBusy ? "Publishing…" : "Publish Session Trace & Copy"}
+        secondaryConfirmLabel="Copy receipt only"
+        confirmDisabled={
+          prExportBusy ||
+          (protectShareWithPassword && sharePassword.trim().length < 4)
+        }
         onConfirm={confirmPrExport}
+        onSecondaryConfirm={confirmPrExportReceiptOnly}
         onCancel={() => setPrExportDialogOpen(false)}
       >
         <div className="mt-4 space-y-2 border-t border-border pt-4">
           <p className="font-mono-ui text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Session trace
+            Session trace (hosted viewer)
           </p>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
             <input
@@ -564,7 +641,7 @@ export default function TimelinePage() {
               onChange={(e) => setIncludeTraceLogInPr(e.target.checked)}
               className="rounded border-border"
             />
-            Include raw log
+            Include raw log messages
           </label>
           {includeTraceLogInPr && (
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -598,8 +675,57 @@ export default function TimelinePage() {
             />
             Include branch logs
           </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={protectShareWithPassword}
+              onChange={(e) => {
+                setProtectShareWithPassword(e.target.checked);
+                if (!e.target.checked) setSharePassword("");
+              }}
+              className="rounded border-border"
+            />
+            Password-protect share link
+          </label>
+          {protectShareWithPassword && (
+            <div className="space-y-1.5 rounded-[3px] border border-border/80 bg-[rgba(255,255,255,0.02)] px-2.5 py-2">
+              <label className="block">
+                <span className="font-mono-ui text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Share password
+                </span>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    value={sharePassword}
+                    onChange={(e) => setSharePassword(e.target.value)}
+                    placeholder="Set a password (min 4 chars)"
+                    className="cl-input flex-1"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSharePassword(generateLocalSharePassword())}
+                    className="cl-btn-ghost shrink-0 px-2.5 py-1.5 text-xs"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </label>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                We do not store your password on the server (only a hash). Remember it, or look it
+                up later under Recent shares on this machine.
+              </p>
+            </div>
+          )}
         </div>
       </PromptDialog>
+      <ShareHistoryDialog
+        open={shareHistoryOpen}
+        workspaceId={workspaceId}
+        workspaceName={workspace?.name}
+        onClose={() => setShareHistoryOpen(false)}
+        onToast={(message) => showToast(message)}
+      />
       <CheckpointDialog
         open={checkpointDialogOpen}
         onConfirm={confirmCheckpoint}
@@ -717,6 +843,15 @@ export default function TimelinePage() {
               >
                 <Download size={13} />
                 {prExportMode ? "Export mode on" : "Export PR"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShareHistoryOpen(true)}
+                className="cl-btn-ghost cl-btn-toolbar"
+                title="Recent published session traces"
+              >
+                <Link2 size={13} />
+                Recent shares
               </button>
             </div>
           </div>
@@ -935,6 +1070,7 @@ export default function TimelinePage() {
             <p className="px-6 py-8 text-sm text-muted-foreground">Loading session graph…</p>
           ) : sessionGraph ? (
             <SessionGraphView
+              workspaceId={workspaceId}
               graph={sessionGraph}
               selectedRowId={selectedSessionRow?.id ?? null}
               onSelectRow={setSelectedSessionRow}

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Check, Copy, X } from "lucide-react";
 import { fetchSessionLogSlice } from "../api";
 import type {
   BlockEntry,
@@ -46,6 +46,76 @@ function roleLabel(role: string): string {
     default:
       return role;
   }
+}
+
+function ExpandableMessage({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const [clamped, setClamped] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const trimmed = text.trim() || "(empty)";
+
+  useLayoutEffect(() => {
+    if (open) return;
+    const el = ref.current;
+    if (!el) return;
+    setClamped(el.scrollHeight > el.clientHeight + 1);
+  }, [trimmed, open]);
+
+  return (
+    <div>
+      <p
+        ref={ref}
+        className={
+          open
+            ? "mt-1 whitespace-pre-wrap text-xs text-foreground"
+            : "mt-1 line-clamp-4 whitespace-pre-wrap text-xs text-foreground"
+        }
+      >
+        {trimmed}
+      </p>
+      {(clamped || open) && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="mt-1.5 cursor-pointer font-mono-ui text-[10px] font-semibold uppercase tracking-wide text-accent hover:underline"
+        >
+          {open ? "Show less" : "Show full message"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CopyMessageButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    const value = text.trim();
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      className="cursor-pointer rounded-[3px] p-0.5 text-muted-foreground hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+      aria-label={copied ? "Copied" : "Copy message"}
+      title={copied ? "Copied" : "Copy"}
+    >
+      {copied ? <Check size={12} className="text-accent" /> : <Copy size={12} />}
+    </button>
+  );
+}
+
+function isCopyableRole(role: string): boolean {
+  return role === "user" || role === "assistant";
 }
 
 interface Props {
@@ -156,7 +226,7 @@ export default function SessionGraphDetailPanel({
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-[3px] p-1 text-muted-foreground hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+          className="shrink-0 cursor-pointer rounded-[3px] p-1 text-muted-foreground hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
           aria-label="Close detail"
         >
           <X size={14} />
@@ -258,7 +328,7 @@ export default function SessionGraphDetailPanel({
                         <button
                           type="button"
                           onClick={() => onOpenBlock(id)}
-                          className="text-left text-xs text-accent hover:underline"
+                          className="cursor-pointer text-left text-xs text-accent hover:underline"
                         >
                           <span className="font-medium text-foreground">{title}</span>
                           <span className="font-mono-ui ml-1.5 text-[10px] text-muted-foreground">
@@ -305,13 +375,14 @@ export default function SessionGraphDetailPanel({
                     <span className="font-mono-ui text-[10px] uppercase text-muted-foreground">
                       {roleLabel(m.role)}
                     </span>
-                    <span className="font-mono-ui text-[10px] text-muted-foreground/70">
-                      #{m.seq}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {isCopyableRole(m.role) && <CopyMessageButton text={m.content} />}
+                      <span className="font-mono-ui text-[10px] text-muted-foreground/70">
+                        #{m.seq}
+                      </span>
+                    </div>
                   </div>
-                  <p className="mt-1 line-clamp-4 whitespace-pre-wrap text-xs text-foreground">
-                    {m.content.trim() || "(empty)"}
-                  </p>
+                  <ExpandableMessage text={m.content} />
                 </li>
               ))}
             </ul>

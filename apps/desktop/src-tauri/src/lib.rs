@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use contextlayer_db::{default_db_path, BlockEntry, GraphStore, PickerNode, SaveBlockInput};
+use contextlayer_db::{
+    default_db_path, BlockEntry, GraphStore, PickerNode, RecordShareHistoryInput, SaveBlockInput,
+    ShareHistoryEntry,
+};
 use contextlayer_export::compile_workspace_summary_markdown;
 use contextlayer_export::{compile_agent_context_markdown, compile_pr_export_markdown_with_options, PrExportOptions};
 use contextlayer_trace::{
@@ -370,6 +373,9 @@ fn run_export_pr_reasoning(
         pr_number,
         git_sha,
         trace_appendix,
+        site_url: std::env::var("CHREIA_PUBLIC_URL").ok().or_else(|| {
+            std::env::var("VITE_CHREIA_PUBLIC_URL").ok()
+        }),
     };
     let store = GraphStore::open(db_path).map_err(|e| e.to_string())?;
     compile_pr_export_markdown_with_options(&store, workspace_id, block_ids, &options)
@@ -608,6 +614,50 @@ fn get_trace_summary_cmd(workspace_id: String) -> Result<serde_json::Value, Stri
     serde_json::to_value(summary).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn record_share_history_cmd(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    workspace_name: String,
+    token: String,
+    url: String,
+    password: Option<String>,
+    password_set: bool,
+    receipt_markdown: String,
+    published_at: String,
+    expires_at: Option<String>,
+) -> Result<ShareHistoryEntry, String> {
+    state.with_store(|store| {
+        store.record_share_history(RecordShareHistoryInput {
+            workspace_id,
+            workspace_name,
+            token,
+            url,
+            password,
+            password_set,
+            receipt_markdown,
+            published_at,
+            expires_at,
+        })
+    })
+}
+
+#[tauri::command]
+fn list_share_history_cmd(
+    state: State<'_, AppState>,
+    workspace_id: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<ShareHistoryEntry>, String> {
+    state.with_store(|store| {
+        store.list_share_history(workspace_id.as_deref(), limit.unwrap_or(100))
+    })
+}
+
+#[tauri::command]
+fn delete_share_history_cmd(state: State<'_, AppState>, id: String) -> Result<bool, String> {
+    state.with_store(|store| store.delete_share_history(&id))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db_path = default_db_path();
@@ -657,6 +707,9 @@ pub fn run() {
             get_session_graph_cmd,
             get_session_log_slice_cmd,
             get_trace_summary_cmd,
+            record_share_history_cmd,
+            list_share_history_cmd,
+            delete_share_history_cmd,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Chreia")

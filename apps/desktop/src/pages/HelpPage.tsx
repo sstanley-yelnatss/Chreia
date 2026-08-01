@@ -134,8 +134,11 @@ export default function HelpPage() {
           <li>Create a workspace, log blocks on the timeline (assumption → action → evidence → conclusion).</li>
           <li>Use the hygiene panel to catch orphans, stale threads, and dead ends.</li>
           <li>
-            <strong className="text-foreground/90">PR export:</strong> turn on PR export mode, select blocks,
-            optionally include session trace (checkpoints, raw log, and/or branch logs), copy, paste into GitHub.
+            <strong className="text-foreground/90">PR export:</strong> turn on PR export mode, select blocks, then{" "}
+            <strong className="text-foreground/90">Publish trail &amp; copy</strong>. That uploads the session
+            graph (and optional logs) to a Chreia share link and copies a short PR receipt with the link — not a
+            raw chat dump in the description. Use <strong className="text-foreground/90">Copy receipt only</strong>{" "}
+            to skip publishing. Optional password protect for OSS / reviewer-only shares.
           </li>
           <li>
             <strong className="text-foreground/90">Capture (optional):</strong> click{" "}
@@ -146,27 +149,31 @@ export default function HelpPage() {
         </ul>
       </Section>
 
-      <Section title="PR export: session trace options">
+      <Section title="PR export: session trail (hosted)">
         <p>
-          In <strong className="text-foreground/90">PR export</strong> mode, checkboxes control an optional appendix at
-          the bottom of the export. They only matter if you ran capture and have session data; otherwise the export
-          is your selected blocks only.
+          Trace checkboxes control what goes into the <strong className="text-foreground/90">hosted session
+          viewer</strong>, not the PR body. The PR clipboard gets your selected blocks plus a{" "}
+          <strong className="text-foreground/90">Session trail</strong> link (e.g. on chreia.vercel.app).
         </p>
         <ul className="space-y-3">
           <li>
-            <strong className="text-foreground/90">Session trace: checkpoints</strong> (on by default): decision
-            moments from the <strong className="text-foreground/90">Checkpoint</strong> button.
+            <strong className="text-foreground/90">Checkpoints</strong> (on by default): decision moments from the
+            Checkpoint button — visible on the share graph.
           </li>
           <li>
-            <strong className="text-foreground/90">Session trace: raw log</strong> (off by default): optional
-            slice of the workspace capture log. Default is <strong className="text-foreground/90">Past 50</strong> (most
-            recent messages). Also: Past/First 25–100, or{" "}
-            <strong className="text-foreground/90">Since last capture start</strong> after you have started capture at
-            least once. If the slice is empty, the export says so explicitly.
+            <strong className="text-foreground/90">Raw log messages</strong> (off by default): main-lane capture
+            messages embedded in the share for the detail panel.
           </li>
           <li>
-            <strong className="text-foreground/90">Session trace: branch logs</strong> (off by default): include
-            messages from capture branches you forked during the session.
+            <strong className="text-foreground/90">Branch logs</strong> (off by default): messages from capture
+            branches.
+          </li>
+          <li>
+            <strong className="text-foreground/90">Password protect</strong>: optional — you set (or
+            generate) the password in the export dialog before publish. Send it out-of-band
+            (Slack/email). Servers store a hash only; this machine keeps a{" "}
+            <strong className="text-foreground/90">Recent shares</strong> history so you can match
+            each link to its password later.
           </li>
         </ul>
       </Section>
