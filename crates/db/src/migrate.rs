@@ -21,6 +21,10 @@ const MIGRATIONS: &[(&str, &str)] = &[
         "005_workspace_archived",
         include_str!("../../../migrations/005_workspace_archived.sql"),
     ),
+    (
+        "006_share_history",
+        include_str!("../../../migrations/006_share_history.sql"),
+    ),
 ];
 
 const SCHEMA_BOOTSTRAP: &str = "
@@ -114,6 +118,7 @@ mod tests {
             "entity_versions",
             "events",
             "schema_migrations",
+            "share_history",
         ] {
             assert!(tables.contains(&required.to_string()), "missing {required}");
         }

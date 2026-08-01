@@ -301,3 +301,55 @@ export async function fetchSessionLogSlice(args: {
     branch: args.branch ?? null,
   });
 }
+
+export type ShareHistoryEntry = {
+  id: string;
+  workspace_id: string;
+  workspace_name: string;
+  token: string;
+  url: string;
+  password: string | null;
+  password_set: boolean;
+  receipt_markdown: string;
+  published_at: string;
+  expires_at: string | null;
+  created_at: string;
+};
+
+export async function recordShareHistory(args: {
+  workspaceId: string;
+  workspaceName: string;
+  token: string;
+  url: string;
+  password?: string | null;
+  passwordSet: boolean;
+  receiptMarkdown: string;
+  publishedAt: string;
+  expiresAt?: string | null;
+}) {
+  return invoke<ShareHistoryEntry>("record_share_history_cmd", {
+    workspaceId: args.workspaceId,
+    workspaceName: args.workspaceName,
+    token: args.token,
+    url: args.url,
+    password: args.password ?? null,
+    passwordSet: args.passwordSet,
+    receiptMarkdown: args.receiptMarkdown,
+    publishedAt: args.publishedAt,
+    expiresAt: args.expiresAt ?? null,
+  });
+}
+
+export async function listShareHistory(args?: {
+  workspaceId?: string | null;
+  limit?: number;
+}) {
+  return invoke<ShareHistoryEntry[]>("list_share_history_cmd", {
+    workspaceId: args?.workspaceId ?? null,
+    limit: args?.limit ?? 100,
+  });
+}
+
+export async function deleteShareHistory(id: string) {
+  return invoke<boolean>("delete_share_history_cmd", { id });
+}

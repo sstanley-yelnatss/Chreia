@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Zap } from "lucide-react";
+import { fetchSessionLogSlice } from "../api";
+import { laneSeqRange } from "../lib/formatLaneThread";
 import type { SessionGraph, SessionGraphLane, SessionGraphRow } from "../types";
+import LaneCopyThreadButton from "./LaneCopyThreadButton";
 
 const ROW_H = 56;
 const LANE_W = 48;
@@ -132,6 +135,7 @@ function laneStatusHint(lane: SessionGraphLane): string | null {
 }
 
 interface Props {
+  workspaceId: string;
   graph: SessionGraph;
   selectedRowId: string | null;
   onSelectRow: (row: SessionGraphRow | null) => void;
@@ -139,12 +143,27 @@ interface Props {
 }
 
 export default function SessionGraphView({
+  workspaceId,
   graph,
   selectedRowId,
   onSelectRow,
   onStartCapture,
 }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const loadLaneMessages = useCallback(
+    (laneId: string) => {
+      const range = laneSeqRange(graph.rows, laneId);
+      if (!range) return Promise.resolve([]);
+      return fetchSessionLogSlice({
+        workspaceId,
+        fromSeq: range.from,
+        toSeq: range.to,
+        branch: laneId === "main" ? null : laneId,
+      });
+    },
+    [graph.rows, workspaceId],
+  );
 
   const laneById = useMemo(
     () => new Map(graph.lanes.map((l) => [l.id, l])),
@@ -363,6 +382,10 @@ export default function SessionGraphView({
                     · {hint}
                   </span>
                 )}
+                <LaneCopyThreadButton
+                  laneLabel={lane.label}
+                  loadMessages={() => loadLaneMessages(lane.id)}
+                />
               </div>
             );
           })}
@@ -621,7 +644,7 @@ export default function SessionGraphView({
                   onClick={() => onSelectRow(selected ? null : row)}
                   onMouseEnter={() => setHoveredId(row.id)}
                   onMouseLeave={() => setHoveredId((id) => (id === row.id ? null : id))}
-                  className={`flex h-14 w-full items-center gap-3 border-b border-border/60 px-4 text-left transition-colors ${
+                  className={`flex h-14 w-full cursor-pointer items-center gap-3 border-b border-border/60 px-4 text-left transition-colors ${
                     selected
                       ? "bg-[rgba(34,211,238,0.08)]"
                       : "hover:bg-[rgba(255,255,255,0.03)]"
