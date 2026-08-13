@@ -4,7 +4,7 @@
 
 **Local reasoning timelines for serious questions.**
 
-Chreia is a desktop app for structured investigation. You open a **workspace** for a question you are working through (a product bet, a strategic call, a security assessment, a debugging rabbit hole). Each **block** on the timeline records what you believe, what you tried, what you observed, and what you concluded.
+Chreia is a desktop app for structured investigation. You open a **workspace** for a question you are working through (a product bet, a strategic call, a security assessment, a debugging rabbit hole). Each **block** on the timeline records what you believe, what you tried, what you observed, and what you concluded. Within the app, each block is displayed as 1. Assumption, 2. Action, 3. Evidence, and 4. Conclusion so you always have a structured view of your work, that is easily exportable for opening PR's.
 
 A **health panel** flags open loops, stale threads, and dead ends so unfinished reasoning does not disappear into scattered notes.
 
@@ -69,11 +69,17 @@ Capture ingests only **new** messages after you start the session, not the full 
 
 In-app **Help** covers install paths, MCP config copy, and day-to-day capture.
 
-<img width="1917" height="982" alt="image" src="https://github.com/user-attachments/assets/d621b131-cf40-4d4c-abf3-068d3574283e" />
+<img width="1918" height="1017" alt="image" src="https://github.com/user-attachments/assets/1c438aa0-f474-4601-8f52-39d746750895" />
 
-<img width="1362" height="677" alt="image" src="https://github.com/user-attachments/assets/cfea915e-15bf-42fb-913a-75b4884a9d8a" />
+<img width="1918" height="1018" alt="image" src="https://github.com/user-attachments/assets/dd38d70f-7075-472b-9647-d5e8f8ba58b1" />
 
-<img width="1917" height="982" alt="image" src="https://github.com/user-attachments/assets/08915599-81b3-43f7-94bf-261478a3495b" />
+<img width="1917" height="1020" alt="image" src="https://github.com/user-attachments/assets/87256281-d80d-4743-926a-f8e4a959a183" />
+
+<img width="1918" height="1015" alt="image" src="https://github.com/user-attachments/assets/1cbdad31-b8a7-4417-b4df-ff386aa7f847" />
+
+
+
+
 
 ## Development
 
