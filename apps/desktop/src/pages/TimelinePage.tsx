@@ -539,6 +539,11 @@ export default function TimelinePage() {
   }
 
   function openDetail(block: BlockEntry) {
+    if (panelOpen && selected?.id === block.id) {
+      setPanelOpen(false);
+      setSelected(null);
+      return;
+    }
     setSelected(block);
     setPanelOpen(true);
   }
@@ -594,6 +599,8 @@ export default function TimelinePage() {
   }
 
   if (!workspaceId) return null;
+
+  const compactWorkspaceHeader = panelOpen && !editingGoal;
 
   return (
     <div className="flex h-full min-h-0">
@@ -747,10 +754,12 @@ export default function TimelinePage() {
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="font-mono-ui truncate text-[17px] font-semibold tracking-tight text-foreground">
-                {workspace?.name ?? "Workspace"}
-              </h1>
-              {workspace && (
+              {!compactWorkspaceHeader && (
+                <h1 className="font-mono-ui truncate text-[17px] font-semibold tracking-tight text-foreground">
+                  {workspace?.name ?? "Workspace"}
+                </h1>
+              )}
+              {workspace && !compactWorkspaceHeader && (
                 <div className="mt-1 max-w-2xl">
                   {editingGoal ? (
                     <div className="space-y-2">
